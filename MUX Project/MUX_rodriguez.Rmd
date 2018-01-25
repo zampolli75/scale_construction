@@ -1,0 +1,451 @@
+---
+title: "Measure for Mobile User Experience"
+author: "Joaquin Rodriguez"
+date: "4/2/2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r warning=FALSE,message=FALSE}
+library(psych)
+library(stargazer)
+library(knitr)
+library(tidyr)
+
+
+survey <- read.csv("Data/individual_group.csv",stringsAsFactors = FALSE)
+survey <- survey[-1:-2,]
+
+survey <- survey[survey$Progress==100, ]
+
+
+scaleitems <- survey[, 30:56]
+scaleitems <- scaleitems[, -7]
+
+names(scaleitems) <- c("Device",
+                       "Nuisance_A",
+                       "Nuisance_B",
+                       "Nuisance_D",
+                       "Nuisance_E",
+                       "Nuisance_C",
+                       "Access_D",
+                       "Access_A",
+                       "Access_B",
+                       "Access_C",
+                       "Access_E",
+                       "Mobility_A",
+                       "Mobility_B",
+                       "Mobility-D",
+                       "Mobility-C",
+                       "Mobility-E",
+                       "SUS01",
+                       "SUS02",
+                       "SUS03",
+                       "SUS04",
+                       "SUS05",
+                       "SUS06",
+                       "SUS07",
+                       "SUS08",
+                       "SUS09",
+                       "SUS10"
+)
+                       
+
+#order by items names
+scaleitems <- scaleitems[, order(names(scaleitems))]
+scaleitems <- scaleitems[,-6]
+#convert response values to intergers
+scaleitems <- apply(scaleitems, 2, FUN = function(x) as.integer(x))
+
+```
+
+# Introduction
+In this study I want to replicate a study that aims at development a holistic mobile user experience instrument. In order to develop an holistic mobile instrument that is able to capture both the usability aspects of the device and its perceptual characteristics, Djamasbi and Wilson (2017)  developed a new instrument (MUX) that consist of three different scales. The new instrument can be used to augment the System Usability Scale (SUS), or can also be used as a standalone instrument for rating mobile user experiences.  
+However, the MUX instrument is sometimes considered by too long by practicioners. Therefore, it has been proposed that the MUX instrument could be adapted in order to reduce the number of items without compromising the overall scale. A version reduced version of the MUX instrument has been proposed, which will refer as sMUX (Working Paper, AMCIS 2017).  
+In this analysis I will compute the reliability of the three different scales of the MUX and the sMUX instruments. Furthermore, I will compute a principical component analysis for the MUX and sMUX istruments.  
+
+In the following analysis I will proceed to:  
+
+-  Perform reliability MUX scales  
+-  Perform a principal component analysis of the MUX and SUS instruments  
+-  Analyze the correlation between the the MUX scales and SUS instrument  
+-  Perform reliability sMUX scales  
+-  Perform a principal compunent analysis of the sMUX and SUS instruments  
+-  Analyze the correlation between the the sMUX scales and SUS instrument  
+-  Compared the results of the full and reduced MUX instruments  
+
+\newpage
+
+# Items
+With the introduction of the **mobile** the System Usability Scale (SUS) instrument was not sufficient in order to assess the specificities of the mobile experiece. Therefore, it was deemed necessary to develop an instrument capable of measuring the mobile experience peculiarities. As a consequence the mobile user experience (MUX) instrument was developed (Djamasbi and Wilson, 2017). The instrument consist of 15 questions sudivided in three main categories, namely Nuisanse, Mobility, and Access.   
+
+To select the items for the reduced MUX instrument (from now onwards I refer to the reduced instrument as sMUX), the authors selected the three best items in terms of loadings for each construct (Nuisance, Access, and Mobility)(Djamasbi and Wilson, 2017)(Working Paper, AMCIS 2017).
+
+Following I list the items for the MUX and SUS instrument. The items that were included in the sMUX instrument are emphasized with a '*'. (Working Paper, AMCIS 2017)   
+
+```{r}
+items <- c("Nuisance",
+           "1. I felt using a [device] to access [software] would slow me down. *",
+           "2. Using [device] to access [software] was inconvenient. *",
+           "3. Completing tasks using a [device] to access [software] inconvenienced me",
+           "4. Using a [device] to access [software] made me feel isolated.",
+           "5. Using a [device] to access [software] made me feel disconnected. *",
+           " ",
+           "Mobility",
+           "6. Using a [device] to access [software] would improve my ability to be mobile.",
+           "7. I would be able to use a [device] to access [software] on the go.",
+           "8. I think a [device] used to access [software] would be easy to carry with me.",
+           "9. I feel a [device] used to access [software] would be very portable.",
+           "10.  I would be able to take a [device] used to access [software] with me almost everywhere I go.",
+           " ",
+           "Access",
+           "11. A [device] provided a good view of information when accessing [software].",
+           "12. I had no trouble viewing text when using a [device] to access [software].",
+           "13. Clicking on links or buttons was easy to accomplish using a [device] to access [software].",
+           "14. I have no problem entering text when using a [device] to access [software].",
+           "15. Using a [device] to access [software] makes it easy to navigate between screens.",
+           " ",
+           "SUS",
+           "16. I think that I would like to use a [device] to access [software] frequently.",
+           "17. I found using a [device] to access [software] unnecessarily complex.",
+           "18. I thought a [device] was easy to use to access [software].",
+           "19. I think that I would need the support of a technical person to be able to use a [device] to access [software].",
+           "20. I found the various functions in using a [device] to access [software] were well integrated.",
+           "21. I thought there was too much inconsistency in using a [device] to access [software].",
+           "22. I would imagine that most people would learn to use a [device] to access [software] very quickly.",
+           "23. I found using a [device] to access [software] very cumbersome to use.",
+           "24. I felt very confident using a [device] to access [software].",
+           "25. I needed to learn a lot of things before I could get going with using a [device] to access [software]."
+            )
+
+items <- data.frame(items)
+kable(items,format = "markdown",col.names = "")
+```
+
+\newpage
+
+# MUX Reliability
+Following we will assess the reliability of the three different MUX scales using the Cronbach's Alpha measure. As stated previously, the MUX instrument is composed of three different scales, namely Access, Mobility, and Nuisance.  
+
+```{r results='asis'}
+
+reliabilityMUX.Access <- alpha(scaleitems[, 1:5])
+reliabilityMUX.Mobility <- alpha(scaleitems[, 6:10])
+reliabilityMUX.Nuisance <- alpha(scaleitems[, 11:15])
+
+reliability.MUX <- alpha(scaleitems[, 1:15], keys = c("Nuisance_A","Nuisance_B","Nuisance_C","Nuisance_D","Nuisance_E"))
+reliability.SUS <- alpha(scaleitems[, 16:25], keys = c("SUS02","SUS04","SUS06","SUS08","SUS10"))
+
+#stargazer(reliability.MUX$total, summary = FALSE, title = "MUX Reliability Statistics", header = FALSE)
+```
+
+## MUX - Access
+As we can observe from the raw_alpha value, the reliability of the scale is **`r round(reliabilityMUX.Access$total$raw_alpha, 3)`**. Therefore the scale present a high reliability alike previous studies' results (Djamasbi and Wilson, 2017).  
+Following we proceed to analyze the single items in order to understand whether some items present issues that might be reducing the overall reliability and therefore should be reduced.  
+
+```{r results='asis'}
+stargazer(reliabilityMUX.Access$item.stats, summary = FALSE, title = "Item Statistics", header = FALSE)
+```
+
+```{r results='asis'}
+stargazer(reliabilityMUX.Access$alpha.drop, summary = FALSE, title = "Item-Total Statistics", header = FALSE)
+```
+
+As we can observe from the 'Item Statistics' table, all the items present a drop value > 0.6. In fact, analyzing the 'Item-Total Statistics' table we can observe how the elimination of none of the items improve the overall alpha reliability. Therefore, our results support previous alpha reliability measures for the Access scale (Djamasbi and Wilson, 2017).  
+
+\newpage
+
+## MUX - Nuisance
+As we can observe from the raw_alpha value, the reliability of the scale is **`r round(reliabilityMUX.Nuisance$total$raw_alpha, 3)`**. Therefore the scale present a high reliability alike previous studies' results.  
+Following we proceed to analyze the single items in order to understand whether some items present issues that might be reducing the overall reliability and therefore should be reduced.  
+
+```{r results='asis'}
+stargazer(reliabilityMUX.Nuisance$item.stats, summary = FALSE, title = "Item Statistics", header = FALSE)
+```
+
+```{r results='asis'}
+stargazer(reliabilityMUX.Nuisance$alpha.drop, summary = FALSE, title = "Item-Total Statistics", header = FALSE)
+```
+
+As we can observe from the 'Item Statistics' table, all the items present a drop value > 0.6. In fact, analyzing the 'Item-Total Statistics' table we can observe how the elimination of none of the items improve the overall alpha reliability. Therefore, our results support previous alpha reliability measures for the Nuisance scale (Djamasbi and Wilson, 2017).  
+
+\newpage
+
+## MUX - Mobility
+As we can observe from the raw_alpha value, the reliability of the scale is **`r round(reliabilityMUX.Mobility$total$raw_alpha, 3)`**. Therefore, the alpha value confirm the positive results present in previous papers (Djamasbi and Wilson, 2017).  
+Following we proceed to analyze the single items in order to understand whether some items present issues that might be reducing the overall reliability and therefore should be reduced.  
+
+```{r results='asis'}
+stargazer(reliabilityMUX.Mobility$item.stats, summary = FALSE, title = "Item Statistics", header = FALSE)
+```
+
+```{r results='asis'}
+stargazer(reliabilityMUX.Mobility$alpha.drop, summary = FALSE, title = "Item-Total Statistics", header = FALSE)
+```
+
+As we can observe from the 'Item Statistics' table, all the items present a drop value > 0.6. In fact, analyzing the 'Item-Total Statistics' table we can observe how the elimination of none of the items improve the overall alpha reliability. Therefore, our results support previous alpha reliability measures for the Mobility scale (Djamasbi and Wilson, 2017).  
+
+\newpage
+
+## MUX - Principal Component Analysis
+Following I will perform a Principal Component Analysis of the MUX and SUS instruments. In order to try to replicate the results of previous studies (Working Paper, AMCIS 2017), we will perform a Varimax rotation with Kaiser Normalization and extracing factors with eigen values above 1.0.  
+
+### Define the Number of Factors
+In order to determine the number of factors in the data to use for the principal component analyis we will examine the parallel analysis scree plot. The plot suggest the appropirate number of factors to extract.  
+```{r}
+fa.parallel(scaleitems, fm = "minres", fa = "fa")
+```
+
+As we can observe from the above plot, the number of factors that have an eigen values greater than one is three. Therefore, we proceed to perform a principal component analysis with three factors.
+
+\newpage
+
+### Principal Component Analysis
+Following I will perform a principal component analysis with Varimax rotation and with Kaiser Normalization. I set the number of factors to three, as suggested by the scree plot parallel analysis.
+
+```{r}
+pca.MUX <- principal(scaleitems, nfactors = 3, rotate = "varimax")
+print(pca.MUX,cut=0.5,digits = 2)
+```
+
+In the above table I used the 0.5 cut off for the loading factors. Therefore, loadings lower than 0.5 are not shown in the table.
+
+\newpage
+
+```{r}
+fa.diagram(pca.MUX)
+```
+
+As we can observe from the loading values, the scales of Access, Mobility, and Nuisance are defined clearly. In fact, the items for each of the three different scales load significantly (>.5) in three different factors.  
+Analyzing the relationship of MUX with SUS, we can observe how the SUS items load only on the first two factors. Although the SUS's item loadings might not convey any particular meaning at first, we can observe how all the items that are negatively worded load in the first factors, whereas the positively worded ones all load on the second.  
+Furthermore, we can observe how the three factors account respectively for 0.22, 0.21, and 0.14 of the variance explanied. This results are satisfactory as the total variance explained is significant. Furthermore, these results confirm previous finding for this scale (Working Paper, AMCIS 2017).    
+
+\newpage
+
+## MUX - Scale Correlations
+
+\small
+```{r results="asis"}
+# scaleitems <- as.data.frame(scaleitems)
+# names(scaleitems) <- 
+#   paste(
+#   substring(names(scaleitems), 1,5),
+#   sapply(strsplit(as.character(names(scaleitems)), ""), tail, 1),
+#   sep = ""
+#   )
+```
+\normalsize
+
+As we can observed from the correlation table below the three different scales of the MUX instrument slightly correlate. The highest correlation is between the Access and Nuissance scales (-.29). This results confirm that the three scales actually measure three different independent scales.  
+The SUS intrument slightly correlate with all the MUX scales.
+
+```{r results="asis"}
+meanMUX.Access <- apply(scaleitems[,1:5], MARGIN = 1, mean)
+meanMUX.Mobility <- apply(scaleitems[,6:10], MARGIN = 1, mean)
+meanMUX.Nuissance <- apply(scaleitems[,11:15], MARGIN = 1, mean)
+meanSUS <- apply(scaleitems[,16:25], MARGIN = 1, mean)
+
+MUXscale <- cbind(meanMUX.Access,meanMUX.Mobility,meanMUX.Nuissance,meanSUS)
+dimnames(MUXscale)[[2]] <- c("Access","Mobility","Nuissance","SUS")
+
+stargazer(Hmisc::rcorr(MUXscale)[1], title = "Scale Correlations", header = FALSE)
+stargazer(Hmisc::rcorr(MUXscale)[3], title = "Scale Correlations Significance", header = FALSE)
+```
+
+\newpage
+
+
+## MUX - Prediction of the SUS Instrument
+
+Following we will perform an ANOVA and fit a linear model in order to assess whether the MUX instrument is able to preduct the results of the SUS instrument. In fact, in order to understand whether the MUX instrument can substitute the SUS scale I want to assess how much of the variance of the SUS instrument can be predicted by the MUX instrument.  
+
+
+```{r}
+MUX.scale <- as.data.frame(MUXscale)
+#MUX.scale <- gather(MUX.scale, item, score)
+
+lmMUX.scale <- lm(MUX.scale, formula = SUS ~ Access+Mobility+Nuissance)
+anovMUX.scale <- anova(lmMUX.scale)
+
+```
+
+```{r results="asis"}
+stargazer(anovMUX.scale, title = "ANOVA", header = FALSE, summary = FALSE)
+```
+
+```{r results="asis"}
+stargazer(lmMUX.scale, title = "Coefficients", header = FALSE)
+```
+
+As we can observed the three scales present in the MUX instrument are significant predictors of the SUS instrument. The overall R-squared of the model is `r round(summary(lmMUX.scale)$r.squared,2)`. This results confirm that the MUX is able to explain a significant portion of the variability of the SUS instrument.  
+
+
+
+
+\newpage
+
+# sMUX Reliability
+Following we will analyze the proposed reduced version of the MUX scale, namely sMUX. As stated previously, the sMUX scale is comprised of three items for each scale (Nuisance, Access, Mobility). Therefore, the sMUX is comprised of a total number of nine items.  
+Following we will assess the reliability of the three different sMUX scales using the Cronbach's Alpha measure.  
+As a general pattern we expect the reliability scores to be lower than for the complete scales. In fact, generally as the number of items is reduced the reliability tends to decrease.  
+
+```{r results='asis'}
+
+reliabilitysMUX.Access <- alpha(scaleitems[, 1:3])
+reliabilitysMUX.Mobility <- alpha(scaleitems[, 6:8])
+reliabilitysMUX.Nuisance <- alpha(scaleitems[, 11:13])
+
+reliability.MUX <- alpha(scaleitems[, c(1:3,6:8,11:13)], keys = c("Nuisance_A","Nuisance_B","Nuisance_C"))
+reliability.SUS <- alpha(scaleitems[, 16:25], c("SUS02","SUS04","SUS06","SUS08","SUS10"))
+
+#stargazer(reliability.MUX$total, summary = FALSE, title = "MUX Reliability Statistics", header = FALSE)
+```
+
+\newpage
+
+## sMUX - Access
+As we can observe from the raw_alpha value, the reliability of the scale is **`r round(reliabilitysMUX.Access$total$raw_alpha, 3)`**. The sMUX reliability is `r round(reliabilityMUX.Access$total$raw_alpha, 3) - round(reliabilitysMUX.Access$total$raw_alpha, 3)` lower than the MUX scale. However, the scale still presents a significant reliability and confirm previous studies.  
+Following we proceed to analyze the single items in order to understand whether some items present issues that might be reducing the overall reliability and therefore should be reduced.  
+
+```{r results='asis'}
+stargazer(reliabilitysMUX.Access$item.stats, summary = FALSE, title = "Item Statistics", header = FALSE)
+```
+
+```{r results='asis'}
+stargazer(reliabilitysMUX.Access$alpha.drop, summary = FALSE, title = "Item-Total Statistics", header = FALSE)
+```
+
+As we can observe from the 'Item Statistics' table, all the items present a drop value > 0.5, presenting values which are lower than the MUX scale. Analyzing the 'Item-Total Statistics' table we can observe how the elimination of none of the items improve the overall alpha reliability. Therefore, our results support previous alpha reliability measures for the Access scale. Furthermore, even though we are using a reduced number of items a high reliability is achieved.  
+
+\newpage
+
+## sMUX - Nuisance
+As we can observe from the raw_alpha value, the reliability of the scale is **`r round(reliabilitysMUX.Nuisance$total$raw_alpha, 3)`**. The sMUX reliability is `r round(reliabilityMUX.Nuisance$total$raw_alpha, 3) - round(reliabilitysMUX.Nuisance$total$raw_alpha, 3)` lower than the MUX scale. However, the scale still presents a significant reliability and confirm previous studies.  
+Following we proceed to analyze the single items in order to understand whether some items present issues that might be reducing the overall reliability and therefore should be reduced.  
+
+```{r results='asis'}
+stargazer(reliabilitysMUX.Nuisance$item.stats, summary = FALSE, title = "Item Statistics", header = FALSE)
+```
+
+```{r results='asis'}
+stargazer(reliabilitysMUX.Nuisance$alpha.drop, summary = FALSE, title = "Item-Total Statistics", header = FALSE)
+```
+
+As we can observe from the 'Item Statistics' table, all the items present a drop value > 0.5, presenting values which are lower than the MUX scale. Analyzing the 'Item-Total Statistics' table we can observe how the elimination of none of the items improve the overall alpha reliability. Therefore, our results support previous alpha reliability measures for the Access scale. Furthermore, even though we are using a reduced number of items a high reliability is achieved.
+
+\newpage
+
+## sMUX - Mobility
+As we can observe from the raw_alpha value, the reliability of the scale is **`r round(reliabilitysMUX.Nuisance$total$raw_alpha, 3)`**. The sMUX reliability is `r round(reliabilityMUX.Nuisance$total$raw_alpha, 3) - round(reliabilitysMUX.Nuisance$total$raw_alpha, 3)` lower than the MUX scale. The scale still presents a significant reliability, however the reliability score is considerably lower than previous studies (.814) (Working Paper, AMCIS 2017).  
+Following we proceed to analyze the single items in order to understand whether some items present issues that might be reducing the overall reliability and therefore should be reduced.  
+
+```{r results='asis'}
+stargazer(reliabilitysMUX.Mobility$item.stats, summary = FALSE, title = "Item Statistics", header = FALSE)
+```
+
+```{r results='asis'}
+stargazer(reliabilitysMUX.Mobility$alpha.drop, summary = FALSE, title = "Item-Total Statistics", header = FALSE)
+```
+
+As we can observe from the 'Item Statistics' table, all the items present a drop value > 0.6. However, analyzing the 'Item-Total Statistics' table we can observe how the elimination of the Mobility_A item we could improve the overall alpha reliability. This result is contraddicts the previous results for this scale (Working Paper, AMCIS 2017).
+
+\newpage
+
+## sMUX - Principal Component Analysis
+Following I will perform a Principal Component Analysis of the sMUX and SUS instruments. In order to try to replicate the results of previous studies (Working Paper, AMCIS 2017), we will perform a Varimax rotation with Kaiser Normalization and extracing factors with eigen values above 1.0.  
+
+### Define the Number of Factors
+In order to determine the number of factors in the data to use for the principal component analyis we will examine the parallel analysis scree plot. The plot suggest the appropirate number of factors to extract.  
+```{r}
+fa.parallel(scaleitems[, c(1:3,6:8,11:13,16:25)], fm = "minres", fa = "fa")
+```
+
+As we can observe from the above plot, the number of factors suggested to be extracted is four. However, we are only interested in eigenvalues higher than 1.0, therefore, we proceed to perform a principal component analysis with three factors.
+
+\newpage
+
+### Principal Component Analysis
+Following I will perform a principal component analysis with Varimax rotation and with Kaiser Normalization. I set the number of factors to three, as suggested by the scree plot parallel analysis.
+
+```{r}
+pca.sMUX <- principal(scaleitems[, c(1:3,6:8,11:13,16:25)], nfactors = 3, rotate = "varimax")
+print(pca.sMUX,cut=0.5,digits = 2)
+```
+
+\newpage
+
+```{r}
+fa.diagram(pca.MUX)
+```
+
+As we can observe from the loading values, the scales of Access, Mobility, and Nuisance are defined clearly. In fact, the items for each of the three different scales load significantly (>.5) in three different factors.  
+Analyzing the relationship of sMUX with SUS, we can observe how the SUS items load only on the first two factors. Although the SUS's item loadings might not convey any particular meaning at first, we can observe how all the items that are negatively worded load in the first factors, whereas the positively worded ones all load on the second.  
+Furthermore, we can observe how the three factors account respectively for 0.23, 0.21, and 0.12 of the variance explanied. This results are satisfactory as the total variance explained is significant. Furthermore, these results confirm previous finding for this scale (Working Paper, AMCIS 2017) and with the full MUX scaled analyzed previously.      
+
+\newpage
+
+## sMUX - Scale Correlations
+
+\small
+```{r results="asis"}
+# scaleitems <- as.data.frame(scaleitems)
+# names(scaleitems) <- 
+#   paste(
+#   substring(names(scaleitems), 1,5),
+#   sapply(strsplit(as.character(names(scaleitems)), ""), tail, 1),
+#   sep = ""
+#   )
+```
+\normalsize
+
+```{r results="asis"}
+meansMUX.Access <- apply(scaleitems[,1:3], MARGIN = 1, mean)
+meansMUX.Mobility <- apply(scaleitems[,6:8], MARGIN = 1, mean)
+meansMUX.Nuissance <- apply(scaleitems[,11:13], MARGIN = 1, mean)
+meanSUS <- apply(scaleitems[,16:25], MARGIN = 1, mean)
+
+sMUX.scale <- cbind(meansMUX.Access,meansMUX.Mobility,meansMUX.Nuissance,meanSUS)
+dimnames(sMUX.scale)[[2]] <- c("Access","Mobility","Nuissance","SUS")
+
+stargazer(Hmisc::rcorr(sMUX.scale)[1], title = "Scale Corralations", header = FALSE)
+stargazer(Hmisc::rcorr(sMUX.scale)[3], title = "Scale Corralations", header = FALSE)
+```
+
+The correlations results are coherent with the ones of the full MUX instrument. Therefore, this result supports the creation of a shorther version of the MUX.  
+
+\newpage
+
+## sMUX - Prediction of the SUS Instrument
+Following we will perform an ANOVA and fit a linear model in order to assess whether the MUX instrument is able to preduct the results of the SUS instrument. In fact, in order to understand whether the MUX instrument can substitute the SUS scale I want to assess how much of the variance of the SUS instrument can be predicted by the MUX instrument.  
+
+```{r}
+sMUX.scale <- as.data.frame(sMUX.scale)
+#sMUX.scale <- gather(sMUX.scale, item, score)
+
+lmsMUX.scale <- lm(sMUX.scale, formula = SUS ~ Access+Mobility+Nuissance)
+anovsMUX.scale <- anova(lmsMUX.scale)
+```
+
+```{r results="asis"}
+stargazer(anovsMUX.scale, title = "ANOVA", header = FALSE, summary = FALSE)
+```
+
+```{r results="asis"}
+stargazer(lmsMUX.scale, title = "Coefficients", header = FALSE)
+```
+
+As we can observed the three scales present in the MUX instrument are significant predictors of the SUS instrument. The overall R-squared of the model is `r round(summary(lmsMUX.scale)$r.squared,2)`. Although the reduced MUX is able to explain an important share of variance of the SUS instrument, the R-square is significantly lower compared to the model with the full MUX.  
+
+\newpage
+
+# Conclusions
+The results of the analysis are consistent with previous findings. In fact, the replication produced similar reliability, factors, and loadings compared to Djamasbi and Wilson (2017) and (Working Paper, AMCIS 2017).  
+The results are encouraging as they support previous findings. However, the sMUX scale was not able to predict as reliably as the MUX the SUS instrument. Therefore, in order to measure a holistic mobile experience I suggest:  
+
+-  Using the MUX instrument either alone enhanced with the SUS.  
+-  Using the sMUX instrument enhanced with the SUS.

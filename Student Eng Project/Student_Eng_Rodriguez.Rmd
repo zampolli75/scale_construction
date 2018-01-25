@@ -1,0 +1,280 @@
+---
+title: "Development of a Student's Engagement Measure"
+author: "Joaquin Rodriguez"
+date: "4/3/2017"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+```{r message=FALSE}
+library(psych)
+#library(mnormt)
+#library(GPArotation)
+library(stargazer)
+library(knitr)
+library(tidyr)
+
+survey <- read.csv("Data/SurveyGroup.csv",stringsAsFactors = FALSE)
+survey <- survey[-1:-2,]
+
+survey <- survey[survey$Progress==100, ]
+
+#stuteng <- survey[, c(1:17, 30:39)]
+#names(stuteng) <- c(names(stuteng)[1:16],"Consent","F3.1","F1.1","F3.2","F3.3","F1.2","F1.3","F2.1","F4.1","F2.2","F4.2")
+
+scaleitems <- survey[, 30:39]
+
+names(scaleitems) <- c("MOTIVATION_1","USEFULNESS_1","MOTIVATION_2","MOTIVATION_3","USEFULNESS_2","USEFULNESS_3","PARTICIPATION_1","TEACHQUAL_1","PARTICIPATION_2","TEACHQUAL_2")
+
+#order by items names
+scaleitems <- scaleitems[, order(names(scaleitems))]
+
+#convert response values to intergers
+scaleitems <- apply(scaleitems, 2, FUN = function(x) as.integer(x))
+
+```
+
+# Introduction
+The items selected for this survey have the objective of assessing the level of engagement of students towards the learning process.  
+From informal interviews and discussions with my advisor I have identified four main constructs that intuitively are major factors influencing student's engagement to a class. The identified constructs are:  
+
+-  Motivation  
+-  Participation  
+-  Teaching Quality  
+-  Usefulness  
+
+\newpage
+
+# Items Selection
+Initially, I identified 16 total items for the four constructs. However, after performing the Q-Methodology exercise in class I reduced the items to 10.  
+
+-- Explain which items were taken from existing instruments.
+
+Following I present the final items used in the survey grouped by the four different constructs.
+
+```{r}
+items <- c("Motivation",
+           "1. I prefer class work that is challenging so I can learn new things.",
+           "2. I often choose paper topics I will learn something from even if they require more work.",
+           "3. Even when I do poorly on a test I try to learn from my mistakes.",
+           " ",
+           "Usefulness",
+           "4. I think I will be able to use what I learn in this class in other classes.",
+           "5. I think that what I am learning in this class is useful.",
+           "6. I think that what we are learning in this class is interesting.",
+           " ",
+           "Participation",
+           "7. I participate in class activities.",
+           "8. I consistently do the homework every week.",
+           " ",
+           "Teaching Quality",
+           "9. Interaction in class facilitated learning.",
+           "10. The course materials enhance the learning experience."
+            )
+
+items <- data.frame(items)
+kable(items,format = "markdown",col.names = "")
+
+```
+
+Multiple items used in the development of the scale were inspired from the the work of Pintrich et al. which developed a scale to measure the learning components of classroom acedemic performance.  
+
+Pintrich, R. R., & DeGroot, E. V. (1990). Motivational and self-regulated learning components of classroom academic performance, *Journal of Educational Psychology*, 82, 33-40.
+
+\newpage
+
+# Scales Reliability
+Following we will assess the reliability of the scale using the Cronbach's Alpha measure.  
+
+```{r results='asis'}
+reliability <- alpha(scaleitems)
+stargazer(reliability$total, summary = FALSE, title = "Reliability Statistics", header = FALSE)
+```
+
+As we can observe from the raw_alpha value, the reliability of the scale is `r round(reliability$total$raw_alpha, 3)`. Therefore the scale present a high reliability.  
+Following we proceed to analyze the single items in order to understand if there are some that should be removed from the survey in order to increase the reliability.  
+
+```{r results='asis'}
+stargazer(reliability$item.stats, summary = FALSE, title = "Item Statistics", header = FALSE)
+```
+
+```{r results='asis'}
+stargazer(reliability$alpha.drop, summary = FALSE, title = "Item-Total Statistics", header = FALSE)
+```
+
+
+As we can observed from the table 'Item-Total Statistics', only the exclusion of item PARTICIPATION_2 has a positive effect on the reliability. Furthermore, the same item present an r.drop value < 0.3. Therefore, I decided to remove the item PARTICIPATION_2 from the analysis.  
+Moreover, after controlling the 
+
+The reliability scores for the scale after removing item PARTICIPATION_2 are the following.
+
+```{r}
+scaleitems <- scaleitems[ , c(-5)]
+
+reliability <- alpha(scaleitems)
+```
+
+```{r results='asis'}
+reliability <- alpha(scaleitems)
+stargazer(reliability$total, summary = FALSE, title = "Reliability Statistics", header = FALSE)
+```
+
+```{r results='asis'}
+stargazer(reliability$item.stats, summary = FALSE, title = "Item Statistics", header = FALSE)
+```
+
+```{r results='asis'}
+stargazer(reliability$alpha.drop, summary = FALSE, title = "Item-Total Statistics", header = FALSE)
+```
+
+\newpage
+
+# Factor Analysis
+Following I will perform a Factor Analysis of the scale. I will perform a Factor analysis performing a orthogonal and oblique rotation.
+
+## Define the Number of Factors
+In order to determine the number of factors in the data to use for the factor analysis I examined the scree plot of the successive eigenvalues. The plot suggest the appropirate number of factors to extract.  
+```{r}
+fa.parallel(scaleitems, fm = "minres", fa = "fa")
+```
+
+As we can observe from the above plot, the number of factors suggested to be extracted is three. Therefore, we proceed to perform a factor analysis with three factors without any ortation, and with an orthagonal and oblique rotations.
+
+\newpage
+
+## Without Rotation
+Following I will perform a factor analysis without any rotation and setting the number of factors at three.
+
+```{r}
+fa.none <- fa(scaleitems,nfactors = 3, rotate = "none", fm = "pa")
+print(fa.none,cut=0.3,digits = 2)
+```
+
+
+```{r}
+plot(fa.none$e.values,type = "b", ylab = "Eigenvalue")
+fa.diagram(fa.none)
+```
+
+As we can observe from the standardized factor loadings all of the items are loading into the same factor. Therefore, this method of extraction is not providing any useful information
+
+\newpage
+
+## Orthagonal Rotation
+Following I will perform a factor analysis using a varimax orthogonal rotation and setting the number of factors at three.
+
+```{r}
+fa.varimax <- fa(scaleitems,nfactors = 3, rotate = "varimax", fm = "pa")
+print(fa.varimax,cut=0.3,digits = 2)
+```
+
+\newpage
+
+```{r}
+plot(fa.varimax$e.values,type = "b", ylab = "Eigenvalue")
+fa.diagram(fa.varimax)
+```
+
+From the analysis of the standardized loadings we can deduce multiple considerations, such as:  
+
+-  MOTIVATION_3: the item does not load in the same factor as the other two motivation items. Therefore, this item is clearly not measuring the same construct as the other two items.  
+-  PARTICIPATION_1: this item loads in the same factor as the teaching quality and USEFULNESS_3 items. I belive that the 
+-  TEACHQUAL_2: this item loads into two different factors.  
+-  USEFULNESS_1: this items loads into two different factors. The item loads into the same factor as MOTIVATION_1 and MOTIVATION_2 items.  
+-  USEFULNESS_3: this item loads into two different factors.
+
+From the analysis we can obverve how there are multiple items that load in more than one factor. Therefore it is difficult to clearly define the constructs emegering from such heteregeneous factors.  
+I belive that the items USEFULNESS_3, TEACHQUAL_1, and PARTICIPATION_1 might load into the same factor because of the terminology used in the questions. In fact, in all three items we refer to a certain action or experience related to the term 'class'. Therefore, students might had tend to answer consistently accross these items becouse of a wording effect. 
+
+\newpage
+
+## Oblique Rotation
+
+```{r}
+fa.oblimin <- fa(scaleitems,nfactors = 3, rotate = "oblimin", fm = "pa")
+print(fa.oblimin,cut=0.3,digits = 2)
+```
+
+\newpage
+
+```{r}
+plot(fa.oblimin$e.values,type = "b", ylab = "Eigenvalue")
+fa.diagram(fa.oblimin)
+```
+
+The resulting standardized loadings from the oblique extraction present more interpretable results compared to the orthogonal one. In fact, we can observe how there is only one item that loads in two different factors, namely USEFULNESS_1.  
+From the analysis of the item loadings we can interpet the factors in the following manner:  
+-  PA1: in this factor all the usefulness items load significantly. Furthermore, item MOTIVATION_3 loads into the factor. Therefore, I decided to remove item MOTIVATION_3 from the analysis.  
+-  PA2: in this factor the teaching quality and participation item load significantly. Analyzing the wording of the three items i conclude that students might have interpret them as an 'In-Class Experience' construct.  
+-  PA3: in this factor items 1 and 2 regarding motication, and item 1 regarding usefulness load significantly. USEFULNESS_1 is the only item that loads in two differnet factors, therefore I decided to remove this item from the analysis.
+
+## Oblique Rotation - After Item Elimination
+
+```{r}
+scaleitems <- scaleitems[, c(-3,-7)]
+```
+
+```{r}
+fa.oblimin <- fa(scaleitems,nfactors = 3, rotate = "oblimin", fm = "pa")
+print(fa.oblimin,cut=0.3,digits = 2)
+```
+
+\newpage
+
+```{r}
+plot(fa.oblimin$e.values,type = "b", ylab = "Eigenvalue")
+fa.diagram(fa.oblimin)
+```
+
+\newpage
+
+## Correlations
+
+\small
+```{r results="asis"}
+# scaleitems <- as.data.frame(scaleitems)
+# names(scaleitems) <- 
+#   paste(
+#   substring(names(scaleitems), 1,5),
+#   sapply(strsplit(as.character(names(scaleitems)), ""), tail, 1),
+#   sep = ""
+#   )
+# 
+# correlations <- cor(scaleitems)
+# stargazer(correlations,title = "Correlations", header = FALSE)
+```
+
+\normalsize
+
+As we can observed from the correlation table, all correlations are significant at 0.05. It is difficult to interpret the correlations given scarse theory supporting the scale development of the items. However, we can observe how the Teaching Quality, Participation, and Usefulness are the three measures high highest levels of correlation. This might indicate that these three factors are the most significant in determining the students engagement during a course.   
+
+```{r results="asis"}
+MOTIVATION <- apply(scaleitems[,1:2], MARGIN = 1, mean)
+PARTICIPATION <- scaleitems[,3]
+TEACH.QUAL <- apply(scaleitems[,4:5], MARGIN = 1, mean)
+USEFULNESS <- apply(scaleitems[,6:7], MARGIN = 1, mean)
+
+
+eng.scale <- cbind(MOTIVATION,PARTICIPATION,TEACH.QUAL,USEFULNESS)
+#dimnames(sMUX.scale)[[2]] <- c("Access","Mobility","Nuissance","SUS")
+
+stargazer(Hmisc::rcorr(eng.scale)[1], title = "Scale Correlations", header = FALSE)
+stargazer(Hmisc::rcorr(eng.scale)[3], title = "Scale Correlations Significance", header = FALSE)
+```
+
+
+
+
+
+
+
+
+
+
+
+
